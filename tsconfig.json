@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "strict": true,
+        "noEmitOnError": true,
+        "skipLibCheck": true,
+        "types": ["chrome"]
+    },
+    "include": [
+        "src/**/*.ts"
+    ]
+}

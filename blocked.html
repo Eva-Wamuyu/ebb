@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Monofeed</title>
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <span class="brand">Monofeed</span>
+      <button id="open-settings" class="header-link" type="button">
+        Settings
+      </button>
+    </header>
+
+    <section class="notice" aria-labelledby="notice-title" aria-describedby="notice-message">
+      <h1 id="notice-title">Social media browsing limit reached</h1>
+      <p id="notice-message" role="status">
+        Checking your active social-media tabs…
+      </p>
+    </section>
+
+    <section class="destination" aria-labelledby="destination-heading">
+      <span id="destination-heading" class="label">
+        Blocked destination
+      </span>
+
+      <p id="destination-name" class="destination-name">
+        Loading destination…
+      </p>
+
+      <span id="destination-url" class="destination-url">
+        Loading URL…
+      </span>
+    </section>
+
+    <div class="layout">
+      <section class="main" aria-labelledby="open-tabs-heading">
+        <h2 id="open-tabs-heading" class="section-title">
+          Open tabs
+        </h2>
+
+        <div id="tab-list" class="tab-list" aria-live="polite">
+          <p id="tabs-loading">Loading open tabs…</p>
+        </div>
+      </section>
+
+      <aside class="sidebar" aria-labelledby="current-use-heading">
+        <h2 id="current-use-heading" class="section-title">
+          Current use
+        </h2>
+
+        <dl class="stats">
+          <div class="stat">
+            <dt>Platforms</dt>
+            <dd id="platform-usage">0 / 0</dd>
+          </div>
+
+          <div class="stat">
+            <dt>Tabs</dt>
+            <dd id="tab-usage">0 / 0</dd>
+          </div>
+
+          <div class="stat">
+            <dt>Limit per platform</dt>
+            <dd id="tabs-per-platform-limit">0</dd>
+          </div>
+        </dl>
+
+        <div class="actions">
+          <button id="check-and-continue" class="button button-primary button-block" type="button">
+            Check and continue
+          </button>
+          <button id="close-page" class="button button-block" type="button"> Close this page</button>
+        </div>
+
+        <p id="retry-note" class="note">
+          Your destination remains available after a slot opens.
+        </p>
+      </aside>
+    </div>
+
+    <footer class="footer">
+      <span id="extension-status">Monofeed is active.</span>
+
+      <button id="pause-limits" class="header-link" type="button">
+        Pause limits
+      </button>
+    </footer>
+  </main>
+
+  <template id="tab-row-template">
+    <div class="tab-row">
+      <div class="platform"></div>
+
+      <div class="tab-copy">
+        <span class="tab-title"></span>
+        <span class="tab-url"></span>
+      </div>
+
+      <button class="button button-close"type="button">
+        Close
+      </button>
+    </div>
+  </template>
+
+  <script type="module" src="dist/blocked.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Monofeed",
+  "description": "Reduce social media fatigue by having one context open at a time",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Monofeed",
+    "default_icon": "Monofeed.png"
+  },
+  "permissions": ["tabs","notifications"],
+  "background": {
+    "service_worker": "dist/background.js",
+    "type": "module"
+  }
+}
