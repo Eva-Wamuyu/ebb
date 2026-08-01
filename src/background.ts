@@ -1,5 +1,6 @@
 import { findPlatformByDomain } from "./platforms.js";
-import { getSettings } from "./settings.js";
+import { getSettings, isPlatformManaged } from "./settings.js";
+import type { ExtensionSettings } from "./settings.js";
 import { getDomain, getTabPlatform } from "./utils.js";
 import { BlockReason, PlatformSummary, Platform, ManagedTabSummary } from "./types.js";
 
@@ -10,11 +11,12 @@ function getPlatformTabs(managedTabs: chrome.tabs.Tab[], platform: Platform): ch
    });
 }
 
-async function getManagedTabs(): Promise<chrome.tabs.Tab[]>{
+async function getManagedTabs(settings: ExtensionSettings): Promise<chrome.tabs.Tab[]>{
     const tabs = await chrome.tabs.query({});
 
     return tabs.filter((tab) => {
-        return getTabPlatform(tab) !== undefined;
+        const platform = getTabPlatform(tab);
+        return platform !== undefined && isPlatformManaged(settings,platform.id);
     })
 }
 
@@ -109,9 +111,12 @@ async function handleNavigation(tabId: number, urlValue: string): Promise<void> 
     return;
   }
   const settings = await getSettings();
+  if(!isPlatformManaged(settings,platform.id)) {
+    return;
+  }
   const maxPlatforms = settings.maxPlatforms;
   const maxTabsPerPlatform = settings.maxTabsPerPlatform;
-  const managedTabs = await getManagedTabs();
+  const managedTabs = await getManagedTabs(settings);
 
   const existingManagedTabs = managedTabs.filter(
     (tab) => tab.id !== tabId
