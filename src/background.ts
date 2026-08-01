@@ -1,9 +1,7 @@
 import { findPlatformByDomain } from "./platforms.js";
+import { getSettings } from "./settings.js";
 import { getDomain, getTabPlatform } from "./utils.js";
 import { BlockReason, PlatformSummary, Platform, ManagedTabSummary } from "./types.js";
-
-const MAX_PLATFORMS = 2;
-const MAX_TABS_PER_PLATFORM = 2;
 
 
 function getPlatformTabs(managedTabs: chrome.tabs.Tab[], platform: Platform): chrome.tabs.Tab[]{
@@ -53,7 +51,7 @@ function getManagedTabSummaries(managedTabs: chrome.tabs.Tab[]): ManagedTabSumma
   })
 }
 
-async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platform,attemptedUrl: string, reason: BlockReason, existingManagedTabs: chrome.tabs.Tab[]): Promise<void>{
+async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platform,attemptedUrl: string, reason: BlockReason, existingManagedTabs: chrome.tabs.Tab[], maxPlatforms: number, maxTabsPerPlatform: number): Promise<void>{
     const blockedPageBaseUrl = chrome.runtime.getURL("./blocked.html");
 
     const activePlatforms = getActivePlatforms(existingManagedTabs);
@@ -73,8 +71,8 @@ async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platfo
         attemptedPlatformId: attemptedPlatform.id,
         attemptedPlatformName: attemptedPlatform.name,
         attemptedUrl,
-        maxPlatforms: String(MAX_PLATFORMS),
-        maxTabsPerPlatform: String(MAX_TABS_PER_PLATFORM),
+        maxPlatforms: String(maxPlatforms),
+        maxTabsPerPlatform: String(maxTabsPerPlatform),
         activePlatforms: JSON.stringify(platformSummaries),
         managedTabs: JSON.stringify(managedTabSummaries)
     });
@@ -93,7 +91,7 @@ async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platfo
     if(existingBlockedTab?.id !== undefined) {
         await closeTab(existingBlockedTab.id);
     }
-    //new monofeed tab. Convert the attempted tab into the blocked page
+
     await chrome.tabs.update(attemptedTabId, {
         url: blockedPageUrl,
         active: true
@@ -110,6 +108,9 @@ async function handleNavigation(tabId: number, urlValue: string): Promise<void> 
     console.log(`Tab ${tabId}: ${domain} is unmanaged.`);
     return;
   }
+  const settings = await getSettings();
+  const maxPlatforms = settings.maxPlatforms;
+  const maxTabsPerPlatform = settings.maxTabsPerPlatform;
   const managedTabs = await getManagedTabs();
 
   const existingManagedTabs = managedTabs.filter(
@@ -135,24 +136,22 @@ async function handleNavigation(tabId: number, urlValue: string): Promise<void> 
     activePlatforms: existingActivePlatforms.map(
       (activePlatform) => activePlatform.name
     ),
-    platformLimit: MAX_PLATFORMS,
-    tabLimit: MAX_TABS_PER_PLATFORM
+    platformLimit: maxPlatforms,
+    tabLimit: maxTabsPerPlatform
   });
 
   //blocking new extra platform - 3rd in v1
-  if(!platformAlreadyActive && existingActivePlatforms.length >= MAX_PLATFORMS){
-    console.warn(`Closing tab ${tabId}: ${platform.name} would exceed the ${MAX_PLATFORMS}-platform limit`);
+  if(!platformAlreadyActive && existingActivePlatforms.length >= maxPlatforms){
+    console.warn(`Closing tab ${tabId}: ${platform.name} would exceed the ${maxPlatforms}-platform limit`);
 
-    // await closeTab(tabId);
-    await showBlockedPage(tabId, platform,urlValue,"platform-limit",existingManagedTabs);
+    await showBlockedPage(tabId, platform,urlValue,"platform-limit",existingManagedTabs,maxPlatforms,maxTabsPerPlatform);
     return;
   }
 
   //blocking a third tab for an already exsiting platform
-  if (existingPlatformTabs.length >= MAX_TABS_PER_PLATFORM) {
-    console.warn(`Closing tab ${tabId}: ${platform.name} exceeded the ${MAX_TABS_PER_PLATFORM}-tab limit`);
-    await showBlockedPage(tabId, platform,urlValue, "tab-limit", existingManagedTabs);
-    // await closeTab(tabId)
+  if (existingPlatformTabs.length >= maxTabsPerPlatform) {
+    console.warn(`Closing tab ${tabId}: ${platform.name} exceeded the ${maxTabsPerPlatform}-tab limit`);
+    await showBlockedPage(tabId, platform,urlValue, "tab-limit", existingManagedTabs,maxPlatforms,maxTabsPerPlatform);
   }
 
 }

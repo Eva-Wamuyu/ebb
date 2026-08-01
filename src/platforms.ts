@@ -106,6 +106,63 @@ export const platforms: Platform[] = [
             "web.telegram.org"
         ]
     },
+    {
+        id: "whatsapp",
+        name: "WhatsApp",
+        domains: [
+            "web.whatsapp.com"
+        ]
+    },
+    {
+        id: "messenger",
+        name: "Messenger",
+        domains: [
+            "messenger.com"
+        ]
+    },
+    {
+        id: "tumblr",
+        name: "Tumblr",
+        domains: [
+            "tumblr.com"
+        ]
+    },
+    {
+        id: "mastodon",
+        name: "Mastodon",
+        domains: [
+            "mastodon.social",
+            "mastodon.online"
+        ]
+    },
+    {
+        id: "quora",
+        name: "Quora",
+        domains: [
+            "quora.com"
+        ]
+    },
+    {
+        id: "medium",
+        name: "Medium",
+        domains: [
+            "medium.com"
+        ]
+    },
+    {
+        id: "substack",
+        name: "Substack",
+        domains: [
+            "substack.com"
+        ]
+    },
+    {
+        id: "nextdoor",
+        name: "Nextdoor",
+        domains: [
+            "nextdoor.com"
+        ]
+    },
 ];
 
 export function findPlatformByDomain(domain: string): Platform | undefined {

@@ -7,7 +7,11 @@
     "default_title": "Monofeed",
     "default_icon": "Monofeed.png"
   },
-  "permissions": ["tabs","notifications"],
+  "options_ui": {
+    "page": "options.html",
+     "open_in_tab": true
+  },
+  "permissions": ["tabs","storage"],
   "background": {
     "service_worker": "dist/background.js",
     "type": "module"

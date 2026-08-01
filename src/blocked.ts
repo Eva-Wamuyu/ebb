@@ -1,4 +1,5 @@
 import {  getPlatformFromUrl } from "./utils.js";
+import { getSettings } from "./settings.js";
 
 import type { BlockReason, ManagedTabSummary } from "./types.js";
 
@@ -59,10 +60,13 @@ function renderDestination(attemptedPlatformName: string,attemptedUrl: string): 
 
 function renderUsage(tabs: ManagedTabSummary[],maxPlatforms: number,maxTabsPerPlatform: number): void {
   const platformCount = getUniquePlatformCount(tabs);
+  const attemptedPlatform = getPlatformFromUrl(attemptedUrl);
+  const attemptedPlatformTabCount = tabs.filter((tab) => tab.platformId === attemptedPlatform?.id).length;
     
   getElement("platform-usage").textContent =  `${platformCount} / ${maxPlatforms}`;
   getElement("tab-usage").textContent =  `${tabs.length} / ${maxPlatforms * maxTabsPerPlatform}`;
-  getElement("tabs-per-platform-limit").textContent = String(maxTabsPerPlatform);
+  getElement("attempted-platform-label").textContent = `${attemptedPlatform?.name ?? attemptedPlatformName} tabs`;
+  getElement("attempted-platform-usage").textContent = `${attemptedPlatformTabCount} / ${maxTabsPerPlatform}`;
     
 }
 
@@ -105,7 +109,16 @@ function renderTabs(tabs: ManagedTabSummary[]): void {
     url.textContent = shortenUrl(tab.url);
     url.title = tab.url;
 
-    closeButton.setAttribute("aria-label",`Close ${tab.title} on ${tab.platformName}`);
+    const tabsAfterClose = tabs.filter((managedTab) => managedTab.id !== tab.id);
+    const willContinue = canOpenAttemptedDestination(tabsAfterClose);
+
+    closeButton.textContent = willContinue ? "Close & continue" : "Close";
+    closeButton.setAttribute("aria-label",willContinue ? `Close ${tab.title} on ${tab.platformName} and continue to ${attemptedPlatformName}` : `Close ${tab.title} on ${tab.platformName}`);
+
+    if(willContinue) {
+      closeButton.classList.remove("button-close");
+      closeButton.classList.add("button-primary");
+    }
 
     closeButton.addEventListener("click", async () => {
       closeButton.disabled = true;
@@ -181,13 +194,6 @@ async function getCurrentManagedTabs(): Promise<
   });
 }
 
-async function refreshState(): Promise<void> {
-  const tabs = await getCurrentManagedTabs();
-
-  renderTabs(tabs);
-  renderUsage(tabs,maxPlatforms,maxTabsPerPlatform);
-}
-
 async function closeCurrentPage(): Promise<void> {
   const currentTab = await chrome.tabs.getCurrent();
 
@@ -222,41 +228,6 @@ function canOpenAttemptedDestination(managedTabs: ManagedTabSummary[]): boolean 
   return platformAllowed && tabAllowed;
 }
 
-async function checkAndContinue(): Promise<void> {
-  const button = getElement<HTMLButtonElement>("check-and-continue");
-
-  button.disabled = true;
-  button.textContent = "Checking…";
-
-  try {
-    await refreshState();
-
-    const managedTabs = await getCurrentManagedTabs();
-
-    if (!canOpenAttemptedDestination(managedTabs)) {
-      getElement("notice-message").textContent = "The limit is still active. Close another managed tab or platform first.";
-      return;
-    }
-
-    const currentTab = await chrome.tabs.getCurrent();
-
-    if (currentTab?.id === undefined) {
-      return;
-    }
-
-    await chrome.tabs.update(
-      currentTab.id,
-      {
-        url: attemptedUrl
-      }
-    );
-  } finally {
-    button.disabled = false;
-    button.textContent =
-      "Check and continue";
-  }
-}
-
 const params = new URLSearchParams(window.location.search);
 
 const reason: BlockReason = params.get("reason") === "tab-limit"
@@ -267,17 +238,62 @@ const attemptedPlatformName = params.get("attemptedPlatformName") ?? "This platf
 
 const attemptedUrl = params.get("attemptedUrl") ?? "";
 
-const maxPlatforms = parseNumber(params, "maxPlatforms", 2);
+let maxPlatforms = parseNumber(params, "maxPlatforms", 2);
 
-const maxTabsPerPlatform = parseNumber(params,"maxTabsPerPlatform",2);
+let maxTabsPerPlatform = parseNumber(params,"maxTabsPerPlatform",2);
+
+async function loadCurrentLimits(): Promise<void> {
+  try {
+    const settings = await getSettings();
+    maxPlatforms = settings.maxPlatforms;
+    maxTabsPerPlatform = settings.maxTabsPerPlatform;
+  } catch (error) {
+    console.warn("Could not read current settings; using the blocked-page limits.",error);
+  }
+}
+
+async function continueIfAllowed(managedTabs: ManagedTabSummary[]): Promise<boolean> {
+  if (!canOpenAttemptedDestination(managedTabs) || !attemptedUrl) {
+    return false;
+  }
+
+  const currentTab = await chrome.tabs.getCurrent();
+
+  if (currentTab?.id === undefined) {
+    return false;
+  }
+
+  await chrome.tabs.update(currentTab.id, {url: attemptedUrl});
+  return true;
+}
+
+async function checkAndContinue(): Promise<void> {
+  const button = getElement<HTMLButtonElement>("check-and-continue");
+  button.disabled = true;
+  button.textContent = "Checking…";
+
+  try {
+    await loadCurrentLimits();
+    const managedTabs = await getCurrentManagedTabs();
+
+    if (await continueIfAllowed(managedTabs)) {
+      return;
+    }
+
+    renderNotice(reason,attemptedPlatformName,maxPlatforms,maxTabsPerPlatform);
+    renderTabs(managedTabs);
+    renderUsage(managedTabs,maxPlatforms,maxTabsPerPlatform);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Check and continue";
+  }
+}
 
 void initializePage();
 
-getElement<HTMLButtonElement>("check-and-continue").addEventListener("click",
-  () => {
-    void checkAndContinue();
-  }
-);
+getElement<HTMLButtonElement>("check-and-continue").addEventListener("click",() => {
+  void checkAndContinue();
+});
 
 getElement<HTMLButtonElement>(
   "close-page"
@@ -293,34 +309,23 @@ getElement<HTMLButtonElement>(
 ).addEventListener(
   "click",
   () => {
-    console.log(
-      "Settings are not implemented yet."
-    );
+    void chrome.runtime.openOptionsPage();
   }
 );
 
-getElement<HTMLButtonElement>(
-  "pause-limits"
-).addEventListener(
-  "click",
-  () => {
-    console.log(
-      "Pause limits is not implemented yet."
-    );
+document.addEventListener("keydown", (event) => {
+  if(event.key === "Escape") {
+    event.preventDefault();
+    void closeCurrentPage();
+    return;
   }
-);
+});
 
 async function initializePage(): Promise<void> {
+  await loadCurrentLimits();
   const managedTabs = await getCurrentManagedTabs();
 
-  if (canOpenAttemptedDestination(managedTabs) && attemptedUrl) {
-    const currentTab = await chrome.tabs.getCurrent();
-
-    if (currentTab?.id !== undefined) {
-      await chrome.tabs.update(currentTab.id, {
-        url: attemptedUrl
-      });
-    }
+  if (await continueIfAllowed(managedTabs)) {
     return;
   }
 

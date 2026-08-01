@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="./style.css" />
+
+    <title>Monofeed settings</title>
+  </head>
+
+  <body>
+    <main class="shell">
+      <header class="header">
+        <span class="brand">Monofeed</span>
+        <span class="header-context">Settings</span>
+        <button
+          id="close-settings"
+          class="header-link"
+          type="button"
+        >
+          Close settings
+        </button>
+      </header>
+
+      <section
+        class="notice"
+        aria-labelledby="settings-heading"
+      >
+        <h1 id="settings-heading">Browsing settings</h1>
+
+        <p>
+          Control how many social-media platforms and tabs may remain
+          open at the same time.
+        </p>
+      </section>
+
+      <form id="settings-form">
+        <div class="settings-layout">
+          <section
+            class="main settings-main"
+            aria-labelledby="limits-heading"
+          >
+            <h2 id="limits-heading" class="section-title">
+              Browsing limits
+            </h2>
+
+            <div class="form-fields">
+              <div class="form-field">
+                <div class="field-heading">
+                  <label for="max-platforms">
+                    Maximum active platforms
+                  </label>
+
+                  <span class="field-range">
+                    1–4
+                  </span>
+                </div>
+
+                <input
+                  id="max-platforms"
+                  class="number-input"
+                  name="maxPlatforms"
+                  type="number"
+                  min="1"
+                  max="4"
+                  step="1"
+                  inputmode="numeric"
+                  aria-describedby="max-platforms-help"
+                  required
+                />
+
+                <p
+                  id="max-platforms-help"
+                  class="field-help"
+                >
+                  The maximum number of different social-media platforms
+                  that can remain open together.
+                </p>
+              </div>
+
+              <div class="form-field">
+                <div class="field-heading">
+                  <label for="max-tabs-per-platform">
+                    Maximum tabs per platform
+                  </label>
+
+                  <span class="field-range">
+                    1–4
+                  </span>
+                </div>
+
+                <input
+                  id="max-tabs-per-platform"
+                  class="number-input"
+                  name="maxTabsPerPlatform"
+                  type="number"
+                  min="1"
+                  max="4"
+                  step="1"
+                  inputmode="numeric"
+                  aria-describedby="max-tabs-help"
+                  required
+                />
+
+                <p
+                  id="max-tabs-help"
+                  class="field-help"
+                >
+                  The maximum number of tabs that may remain open for one
+                  platform.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-actions">
+            <button
+                class="button button-primary"
+                type="submit"
+            >
+                Save settings
+            </button>
+            </div>
+
+            <p
+            id="save-status"
+            class="form-status"
+            role="status"
+            aria-live="polite"
+            ></p>
+          </section>
+
+          <aside
+            class="sidebar settings-sidebar"
+            aria-labelledby="limits-info-heading"
+          >
+            <h2 id="limits-info-heading" class="section-title">
+              How limits work
+            </h2>
+
+            <p class="note">
+              Your selected limits are checked when a tab enters a managed
+              social-media context.
+            </p>
+          </aside>
+        </div>
+      </form>
+
+      <footer class="footer">
+        <span>Changes are stored locally in this browser.</span>
+        <span>Allowed range: 1–4</span>
+      </footer>
+    </main>
+
+    <script
+      type="module"
+      src="./dist/options.js"
+    ></script>
+  </body>
+</html>

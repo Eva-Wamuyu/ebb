@@ -20,6 +20,11 @@
       <p id="notice-message" role="status">
         Checking your active social-media tabs…
       </p>
+      <p class="note">
+        Ebb enforces limits when a tab enters a new managed context.
+        It does not automatically close the managed tabs listed below;
+        you choose which ones to close.
+      </p>
     </section>
 
     <section class="destination" aria-labelledby="destination-heading">
@@ -64,8 +69,8 @@
           </div>
 
           <div class="stat">
-            <dt>Limit per platform</dt>
-            <dd id="tabs-per-platform-limit">0</dd>
+            <dt id="attempted-platform-label">This platform</dt>
+            <dd id="attempted-platform-usage">0 / 0</dd>
           </div>
         </dl>
 
@@ -73,7 +78,10 @@
           <button id="check-and-continue" class="button button-primary button-block" type="button">
             Check and continue
           </button>
-          <button id="close-page" class="button button-block" type="button"> Close this page</button>
+          <button id="close-page" class="button button-block button-with-shortcut" type="button" aria-keyshortcuts="Escape">
+            <span>Close this page</span>
+            <kbd class="button-shortcut">Esc</kbd>
+          </button>
         </div>
 
         <p id="retry-note" class="note">
@@ -84,10 +92,6 @@
 
     <footer class="footer">
       <span id="extension-status">Monofeed is active.</span>
-
-      <button id="pause-limits" class="header-link" type="button">
-        Pause limits
-      </button>
     </footer>
   </main>
 
