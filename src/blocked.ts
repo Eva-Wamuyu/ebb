@@ -36,19 +36,18 @@ function getUniquePlatformCount(tabs: ManagedTabSummary[]): number {
 function renderNotice(reason: BlockReason,attemptedPlatformName: string,maxPlatforms: number,maxTabsPerPlatform: number): void {
   const title = getElement("notice-title");
   const message = getElement("notice-message");
+  const usage = document.createElement("strong");
 
   if (reason === "tab-limit") {
-    title.textContent = "Social Media Tabs Limit Reached";
-    message.textContent =
-      `${attemptedPlatformName} already has ` +
-      `${maxTabsPerPlatform} open tabs.`;
+    title.textContent = `Make room for ${attemptedPlatformName}`;
+    usage.textContent = `${maxTabsPerPlatform} of ${maxTabsPerPlatform}`;
+    message.replaceChildren(`${attemptedPlatformName} is using `,usage," tab spaces. Close one of its tabs to continue.");
     return;
   }
 
-  title.textContent = "Socialmedia Platform Limit Reached";
-  message.textContent =
-    `${attemptedPlatformName} was not opened because ` +
-    `${maxPlatforms} socialmedia platforms are already active.`;
+  title.textContent = `Make room for ${attemptedPlatformName}`;
+  usage.textContent = `${maxPlatforms} of ${maxPlatforms}`;
+  message.replaceChildren("You are using ",usage,` platform spaces. Close the last tab from one platform to continue to ${attemptedPlatformName}.`);
 }
 
 function renderDestination(attemptedPlatformName: string,attemptedUrl: string): void {

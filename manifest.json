@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Monofeed",
-  "description": "Reduce social media fatigue by having one context open at a time",
+  "name": "Ebb",
+  "description": "Keep social browsing focused by limiting open contexts",
   "version": "0.1.0",
   "action": {
-    "default_title": "Monofeed",
+    "default_title": "Ebb",
     "default_icon": "Monofeed.png"
   },
   "options_ui": {

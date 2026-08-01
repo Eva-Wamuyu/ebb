@@ -182,6 +182,10 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log("Monofeed installed.");
 });
 
+chrome.action.onClicked.addListener(() => {
+  void chrome.runtime.openOptionsPage();
+});
+
 chrome.tabs.onCreated.addListener((tab) => {
     const urlValue = tab.pendingUrl ?? tab.url;
     if (!urlValue || tab.id === undefined) {
