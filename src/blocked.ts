@@ -182,6 +182,10 @@ async function getCurrentManagedTabs(): Promise<
       return [];
     }
 
+    if(platformPreferences[platform.id] === false) {
+      return [];
+    }
+
     return [{
       id: tab.id,
       windowId: tab.windowId,
@@ -241,17 +245,33 @@ let maxPlatforms = parseNumber(params, "maxPlatforms", 2);
 
 let maxTabsPerPlatform = parseNumber(params,"maxTabsPerPlatform",2);
 
+let platformPreferences: Record<string, boolean> = {};
+
 async function loadCurrentLimits(): Promise<void> {
   try {
     const settings = await getSettings();
     maxPlatforms = settings.maxPlatforms;
     maxTabsPerPlatform = settings.maxTabsPerPlatform;
+    platformPreferences = settings.platformPreferences;
   } catch (error) {
     console.warn("Could not read current settings; using the blocked-page limits.",error);
   }
 }
 
 async function continueIfAllowed(managedTabs: ManagedTabSummary[]): Promise<boolean> {
+  const attemptedPlatform = getPlatformFromUrl(attemptedUrl);
+
+  if(attemptedPlatform && platformPreferences[attemptedPlatform.id] === false) {
+    const currentTab = await chrome.tabs.getCurrent();
+
+    if(currentTab?.id === undefined) {
+      return false;
+    }
+
+    await chrome.tabs.update(currentTab.id,{url: attemptedUrl});
+    return true;
+  }
+  
   if (!canOpenAttemptedDestination(managedTabs) || !attemptedUrl) {
     return false;
   }
@@ -288,7 +308,12 @@ async function checkAndContinue(): Promise<void> {
   }
 }
 
-void initializePage();
+void initializePage().catch((error: unknown) => {
+  console.error("Could not initialize the Ebb context page.",error);
+  document.body.classList.remove("is-checking");
+  getElement("notice-title").textContent = "Ebb could not check this context";
+  getElement("notice-message").textContent = "Close this page or try the destination again.";
+});
 
 getElement<HTMLButtonElement>("check-and-continue").addEventListener("click",() => {
   void checkAndContinue();
@@ -332,4 +357,5 @@ async function initializePage(): Promise<void> {
   renderDestination(attemptedPlatformName,attemptedUrl);
   renderTabs(managedTabs);
   renderUsage(managedTabs,maxPlatforms,maxTabsPerPlatform);
+  document.body.classList.remove("is-checking");
 }

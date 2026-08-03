@@ -49,6 +49,10 @@ body {
   line-height: 1.45;
 }
 
+body.is-checking .shell {
+  visibility: hidden;
+}
+
 button, a {
   font: inherit;
 }
@@ -329,6 +333,32 @@ button {
 .settings-sidebar {
   min-width: 0;
 }
+.platform-settings {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.platform-list {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.platform-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+  cursor: pointer;
+}
+.platform-toggle input {
+  margin: 0;
+}
 .form-fields {
   border-top: 1px solid var(--border);
 }
@@ -420,6 +450,9 @@ button:disabled {
   .settings-sidebar {
     border-top: 1px solid var(--border);
     border-left: 0;
+  }
+  .platform-list {
+    grid-template-columns: 1fr;
   }
   .field-heading {
     align-items: flex-start;
