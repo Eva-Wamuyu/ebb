@@ -1,16 +1,16 @@
 {
-  "name": "monofeed",
-  "version": "0.1.0",
+  "name": "ebb",
+  "version": "1.0.0",
   "private": true,
-  "description": "",
+  "description": "Limit how many supported social-media contexts stay open at once.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "watch": "tsc --watch"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Wamúyú",
+  "license": "MIT",
   "packageManager": "pnpm@10.28.2",
   "devDependencies": {
     "@types/chrome": "^0.2.2",
