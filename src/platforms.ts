@@ -39,7 +39,8 @@ export const platforms: Platform[] = [
         id: "instagram",
         name: "Instagram",
         domains: [
-            "instagram.com"
+            "instagram.com",
+            "www-fallback.instagram.com",
         ]
     },
     {
