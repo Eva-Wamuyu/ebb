@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ebb",
   "description": "Keep social browsing focused by limiting open contexts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "action": {
     "default_title": "Ebb",
     "default_icon": {

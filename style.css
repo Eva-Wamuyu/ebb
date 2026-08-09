@@ -218,6 +218,11 @@ button {
   border-color: var(--danger);
 }
 
+.tab-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .button-primary {
   border-color: var(--border-dark);
   background: var(--primary);
@@ -317,6 +322,9 @@ button {
   .tab-row .button {
     grid-column: 1 / -1;
     width: 100%;
+  }
+  .tab-actions {
+    grid-column: 1 / -1;
   }
 }
 .header-context {

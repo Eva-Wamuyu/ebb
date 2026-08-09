@@ -95,9 +95,10 @@ function renderTabs(tabs: ManagedTabSummary[]): void {
     const url = fragment.querySelector<HTMLElement>(".tab-url");
       
     const closeButton = fragment.querySelector<HTMLButtonElement>(".button-close");
+    const continueButton = fragment.querySelector<HTMLButtonElement>(".button-continue");
       
 
-    if (!platform || !title || !url || !closeButton) {
+    if (!platform || !title || !url || !closeButton || !continueButton) {
       throw new Error("Invalid tab-row template.");
     }
 
@@ -111,35 +112,39 @@ function renderTabs(tabs: ManagedTabSummary[]): void {
     const tabsAfterClose = tabs.filter((managedTab) => managedTab.id !== tab.id);
     const willContinue = canOpenAttemptedDestination(tabsAfterClose);
 
-    closeButton.textContent = willContinue ? "Close & continue" : "Close";
-    closeButton.setAttribute("aria-label",willContinue ? `Close ${tab.title} on ${tab.platformName} and continue to ${attemptedPlatformName}` : `Close ${tab.title} on ${tab.platformName}`);
-
-    if(willContinue) {
-      closeButton.classList.remove("button-close");
-      closeButton.classList.add("button-primary");
-    }
+    closeButton.setAttribute("aria-label",`Close ${tab.title} on ${tab.platformName}`);
+    continueButton.hidden = !willContinue;
+    continueButton.setAttribute("aria-label",
+      `Close ${tab.title} on ${tab.platformName} and continue to ${attemptedPlatformName}`);
 
     closeButton.addEventListener("click", async () => {
       closeButton.disabled = true;
+      continueButton.disabled = true;
 
       try {
         await chrome.tabs.remove(tab.id);
 
         const managedTabs = await getCurrentManagedTabs();
+        renderTabs(managedTabs);
+        renderUsage(
+          managedTabs,
+          maxPlatforms,
+          maxTabsPerPlatform
+        );
+      } catch (error) {
+        console.error(`Could not close tab ${tab.id}.`,error);
+        closeButton.disabled = false;
+        continueButton.disabled = false;
+      }
+    });
+    continueButton.addEventListener("click",async () => {
+      closeButton.disabled = true;
+      continueButton.disabled = true;
 
-        if (
-          canOpenAttemptedDestination(managedTabs)
-        ) {
-          const currentTab = await chrome.tabs.getCurrent();
-
-          if (currentTab?.id !== undefined) {
-            await chrome.tabs.update(currentTab.id,
-              {
-                url: attemptedUrl
-              }
-            );
-          }
-
+      try {
+        await chrome.tabs.remove(tab.id);
+        const managedTabs = await getCurrentManagedTabs();
+        if(await continueIfAllowed(managedTabs)) {
           return;
         }
 
@@ -156,6 +161,7 @@ function renderTabs(tabs: ManagedTabSummary[]): void {
           error
         );
         closeButton.disabled = false;
+        continueButton.disabled = false;
       }
     });
     list.append(fragment);

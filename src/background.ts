@@ -4,6 +4,8 @@ import type { ExtensionSettings } from "./settings.js";
 import { getDomain, getTabPlatform } from "./utils.js";
 import { BlockReason, PlatformSummary, Platform, ManagedTabSummary } from "./types.js";
 
+const backgroundTabIds = new Set<number>();
+const backgroundReturnTabIds = new Map<number, number>();
 
 function getPlatformTabs(managedTabs: chrome.tabs.Tab[], platform: Platform): chrome.tabs.Tab[]{
     return managedTabs.filter((tab) => {
@@ -53,8 +55,9 @@ function getManagedTabSummaries(managedTabs: chrome.tabs.Tab[]): ManagedTabSumma
   })
 }
 
-async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platform,attemptedUrl: string, reason: BlockReason, existingManagedTabs: chrome.tabs.Tab[], maxPlatforms: number, maxTabsPerPlatform: number): Promise<void>{
+async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platform,attemptedUrl: string, reason: BlockReason, existingManagedTabs: chrome.tabs.Tab[], maxPlatforms: number, maxTabsPerPlatform: number, openInBackground: boolean): Promise<void>{
     const blockedPageBaseUrl = chrome.runtime.getURL("./blocked.html");
+    const returnTabId = backgroundReturnTabIds.get(attemptedTabId);
 
     const activePlatforms = getActivePlatforms(existingManagedTabs);
 
@@ -91,16 +94,27 @@ async function showBlockedPage(attemptedTabId: number, attemptedPlatform: Platfo
 
     //blocking page for monofeed exists so close to shift to new tab
     if(existingBlockedTab?.id !== undefined) {
+        if(openInBackground) {
+            await chrome.tabs.update(existingBlockedTab.id,{url: blockedPageUrl,active: false});
+            await closeTab(attemptedTabId);
+            if(returnTabId !== undefined) await chrome.tabs.update(returnTabId,{active: true});
+            return;
+        }
         await closeTab(existingBlockedTab.id);
     }
 
     await chrome.tabs.update(attemptedTabId, {
         url: blockedPageUrl,
-        active: true
+        active: !openInBackground
     });
+
+    if(openInBackground) {
+        if(returnTabId !== undefined)
+          await chrome.tabs.update(returnTabId,{active: true});
+    }
 }
 
-async function handleNavigation(tabId: number, urlValue: string): Promise<void> {
+async function handleNavigation(tabId: number, urlValue: string, openInBackground: boolean): Promise<void> {
   const domain = getDomain(urlValue);
   if (!domain) {
     return;
@@ -149,14 +163,14 @@ async function handleNavigation(tabId: number, urlValue: string): Promise<void> 
   if(!platformAlreadyActive && existingActivePlatforms.length >= maxPlatforms){
     console.warn(`Closing tab ${tabId}: ${platform.name} would exceed the ${maxPlatforms}-platform limit`);
 
-    await showBlockedPage(tabId, platform,urlValue,"platform-limit",existingManagedTabs,maxPlatforms,maxTabsPerPlatform);
+    await showBlockedPage(tabId, platform,urlValue,"platform-limit",existingManagedTabs,maxPlatforms,maxTabsPerPlatform,openInBackground);
     return;
   }
 
   //blocking a third tab for an already exsiting platform
   if (existingPlatformTabs.length >= maxTabsPerPlatform) {
     console.warn(`Closing tab ${tabId}: ${platform.name} exceeded the ${maxTabsPerPlatform}-tab limit`);
-    await showBlockedPage(tabId, platform,urlValue, "tab-limit", existingManagedTabs,maxPlatforms,maxTabsPerPlatform);
+    await showBlockedPage(tabId, platform,urlValue, "tab-limit", existingManagedTabs,maxPlatforms,maxTabsPerPlatform,openInBackground);
   }
 
 }
@@ -192,18 +206,28 @@ chrome.action.onClicked.addListener(() => {
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
+    if(tab.id !== undefined && !tab.active) {
+        backgroundTabIds.add(tab.id);
+        if(tab.openerTabId !== undefined)
+          backgroundReturnTabIds.set(tab.id,tab.openerTabId);
+    }
     const urlValue = tab.pendingUrl ?? tab.url;
     if (!urlValue || tab.id === undefined) {
         return;
     }
-    void handleNavigation(tab.id, urlValue);
+    void handleNavigation(tab.id, urlValue, backgroundTabIds.has(tab.id));
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (!changeInfo.url) {
         return;
     }
-    void handleNavigation(tabId, changeInfo.url);
+    void handleNavigation(tabId, changeInfo.url, backgroundTabIds.has(tabId) || !tab.active);
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+    backgroundTabIds.delete(tabId);
+    backgroundReturnTabIds.delete(tabId);
 });
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
