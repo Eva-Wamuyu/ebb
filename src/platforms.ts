@@ -55,7 +55,7 @@ export const platforms: Platform[] = [
         id: "threads",
         name: "Threads",
         domains: [
-            "threads.net"
+            "threads.com"
         ]
     },
     {
